@@ -14,6 +14,8 @@ import { Credits } from './pages/Credits';
 import { APIManagement } from './pages/APIManagement';
 import { LiveRequests } from './pages/LiveRequests';
 import { Settings } from './pages/Settings';
+import { OfficerLogin } from './pages/OfficerLogin';
+import { OfficerDashboard } from './pages/OfficerDashboard';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
@@ -32,58 +34,78 @@ const AppContent: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
-        <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignUp />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={user ? <Navigate to="/admin/dashboard" replace /> : <Login />} />
+        <Route path="/admin/signup" element={user ? <Navigate to="/admin/dashboard" replace /> : <SignUp />} />
+        <Route path="/admin/dashboard" element={
           <ProtectedRoute>
             <Layout>
               <Dashboard />
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/officers" element={
+        <Route path="/admin/officers" element={
           <ProtectedRoute>
             <Layout>
               <Officers />
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/queries" element={
+        <Route path="/admin/queries" element={
           <ProtectedRoute>
             <Layout>
               <QueryHistory />
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/credits" element={
+        <Route path="/admin/credits" element={
           <ProtectedRoute>
             <Layout>
               <Credits />
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/apis" element={
+        <Route path="/admin/apis" element={
           <ProtectedRoute>
             <Layout>
               <APIManagement />
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/live" element={
+        <Route path="/admin/live" element={
           <ProtectedRoute>
             <Layout>
               <LiveRequests />
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/settings" element={
+        <Route path="/admin/settings" element={
           <ProtectedRoute>
             <Layout>
               <Settings />
             </Layout>
           </ProtectedRoute>
         } />
+
+        {/* Officer Routes */}
+        <Route path="/officer/login" element={<OfficerLogin />} />
+        <Route path="/officer/dashboard" element={<OfficerDashboard />} />
+
+        {/* Legacy Routes (redirect to admin) */}
+        <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/signup" element={<Navigate to="/admin/signup" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/officers" element={<Navigate to="/admin/officers" replace />} />
+        <Route path="/queries" element={<Navigate to="/admin/queries" replace />} />
+        <Route path="/credits" element={<Navigate to="/admin/credits" replace />} />
+        <Route path="/apis" element={<Navigate to="/admin/apis" replace />} />
+        <Route path="/live" element={<Navigate to="/admin/live" replace />} />
+        <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
+
+        {/* Default Routes */}
+        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/officer" element={<Navigate to="/officer/login" replace />} />
       </Routes>
       <Toaster 
         position="top-right"
