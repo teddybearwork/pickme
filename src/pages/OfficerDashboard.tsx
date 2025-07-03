@@ -1,17 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, CreditCard, History, User, LogOut, Zap, Phone, Mail, Globe, Database } from 'lucide-react';
+import { Search, CreditCard, History, User, LogOut, Zap, Phone, Mail, Globe, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-
-interface OfficerProfile {
-  id: string;
-  name: string;
-  mobile: string;
-  telegram_id: string;
-  credits_remaining: number;
-  total_credits: number;
-  total_queries: number;
-  status: string;
-}
+import { useOfficerAuth } from '../contexts/OfficerAuthContext';
 
 interface QueryResult {
   id: string;
@@ -25,26 +16,23 @@ interface QueryResult {
 
 export const OfficerDashboard: React.FC = () => {
   const { isDark } = useTheme();
+  const { officer, logout } = useOfficerAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('search');
   const [query, setQuery] = useState('');
   const [queryType, setQueryType] = useState<'OSINT' | 'PRO'>('OSINT');
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<QueryResult[]>([]);
-  const [profile, setProfile] = useState<OfficerProfile | null>(null);
 
-  // Mock data - replace with actual API calls
+  // Redirect if not logged in
   useEffect(() => {
-    setProfile({
-      id: '1',
-      name: 'Inspector Ramesh Kumar',
-      mobile: '+91 9791103607',
-      telegram_id: '@rameshcop',
-      credits_remaining: 32,
-      total_credits: 50,
-      total_queries: 146,
-      status: 'Active'
-    });
+    if (!officer) {
+      navigate('/officer/login');
+    }
+  }, [officer, navigate]);
 
+  // Mock data
+  useEffect(() => {
     setResults([
       {
         id: '1',
@@ -66,6 +54,11 @@ export const OfficerDashboard: React.FC = () => {
       }
     ]);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -110,6 +103,10 @@ export const OfficerDashboard: React.FC = () => {
     return 'general';
   };
 
+  if (!officer) {
+    return null; // Will redirect in useEffect
+  }
+
   return (
     <div className={`min-h-screen ${isDark ? 'bg-crisp-black' : 'bg-soft-white'}`}>
       {/* Header */}
@@ -117,6 +114,14 @@ export const OfficerDashboard: React.FC = () => {
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
+              <Link
+                to="/"
+                className={`p-2 transition-colors ${
+                  isDark ? 'text-gray-400 hover:text-cyber-teal' : 'text-gray-600 hover:text-cyber-teal'
+                }`}
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
               <div className="w-10 h-10 bg-cyber-gradient rounded-lg flex items-center justify-center">
                 <Zap className="w-6 h-6 text-white" />
               </div>
@@ -129,7 +134,10 @@ export const OfficerDashboard: React.FC = () => {
                 </p>
               </div>
             </div>
-            <button className={`p-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            <button 
+              onClick={handleLogout}
+              className={`p-2 transition-colors ${isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-600 hover:text-red-400'}`}
+            >
               <LogOut className="w-5 h-5" />
             </button>
           </div>
@@ -137,43 +145,41 @@ export const OfficerDashboard: React.FC = () => {
       </div>
 
       {/* Profile Card */}
-      {profile && (
-        <div className="p-4">
-          <div className={`border border-cyber-teal/20 rounded-lg p-4 ${
-            isDark ? 'bg-muted-graphite' : 'bg-white'
-          }`}>
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-cyber-gradient rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h2 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {profile.name}
-                </h2>
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {profile.mobile}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {profile.credits_remaining} Credits
-                </p>
-                <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  of {profile.total_credits}
-                </p>
-              </div>
+      <div className="p-4">
+        <div className={`border border-cyber-teal/20 rounded-lg p-4 ${
+          isDark ? 'bg-muted-graphite' : 'bg-white'
+        }`}>
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-12 h-12 bg-cyber-gradient rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
             </div>
-            
-            {/* Credit Progress */}
-            <div className={`w-full rounded-full h-2 ${isDark ? 'bg-crisp-black' : 'bg-gray-200'}`}>
-              <div 
-                className="bg-cyber-gradient h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(profile.credits_remaining / profile.total_credits) * 100}%` }}
-              />
+            <div className="flex-1">
+              <h2 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {officer.name}
+              </h2>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                {officer.mobile}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {officer.credits_remaining} Credits
+              </p>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                of {officer.total_credits}
+              </p>
             </div>
           </div>
+          
+          {/* Credit Progress */}
+          <div className={`w-full rounded-full h-2 ${isDark ? 'bg-crisp-black' : 'bg-gray-200'}`}>
+            <div 
+              className="bg-cyber-gradient h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(officer.credits_remaining / officer.total_credits) * 100}%` }}
+            />
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Navigation Tabs */}
       <div className="px-4">
@@ -345,7 +351,7 @@ export const OfficerDashboard: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'credits' && profile && (
+        {activeTab === 'credits' && (
           <div className="space-y-4">
             <div className={`border border-cyber-teal/20 rounded-lg p-4 ${
               isDark ? 'bg-muted-graphite' : 'bg-white'
@@ -355,33 +361,11 @@ export const OfficerDashboard: React.FC = () => {
               </h3>
               <div className="text-center">
                 <p className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {profile.credits_remaining}
+                  {officer.credits_remaining}
                 </p>
                 <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  of {profile.total_credits} credits remaining
+                  of {officer.total_credits} credits remaining
                 </p>
-              </div>
-            </div>
-
-            <div className={`border border-cyber-teal/20 rounded-lg p-4 ${
-              isDark ? 'bg-muted-graphite' : 'bg-white'
-            }`}>
-              <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Usage Statistics
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Total Queries:</span>
-                  <span className={isDark ? 'text-white' : 'text-gray-900'}>{profile.total_queries}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Credits Used:</span>
-                  <span className={isDark ? 'text-white' : 'text-gray-900'}>{profile.total_credits - profile.credits_remaining}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Success Rate:</span>
-                  <span className="text-green-400">95.3%</span>
-                </div>
               </div>
             </div>
 

@@ -2,9 +2,11 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { OfficerAuthProvider } from './contexts/OfficerAuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Layout } from './components/Layout/Layout';
 import { LoadingSpinner } from './components/UI/LoadingSpinner';
+import { LandingPage } from './pages/LandingPage';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
 import { Dashboard } from './pages/Dashboard';
@@ -21,7 +23,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { user, isLoading } = useAuth();
 
   if (isLoading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/admin/login" replace />;
 
   return <>{children}</>;
 };
@@ -34,6 +36,9 @@ const AppContent: React.FC = () => {
   return (
     <Router>
       <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+
         {/* Admin Routes */}
         <Route path="/admin/login" element={user ? <Navigate to="/admin/dashboard" replace /> : <Login />} />
         <Route path="/admin/signup" element={user ? <Navigate to="/admin/dashboard" replace /> : <SignUp />} />
@@ -102,8 +107,7 @@ const AppContent: React.FC = () => {
         <Route path="/live" element={<Navigate to="/admin/live" replace />} />
         <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
 
-        {/* Default Routes */}
-        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        {/* Redirects */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/officer" element={<Navigate to="/officer/login" replace />} />
       </Routes>
@@ -125,9 +129,11 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div className="min-h-screen font-cyber" style={{ backgroundColor: 'var(--bg-primary)' }}>
-          <AppContent />
-        </div>
+        <OfficerAuthProvider>
+          <div className="min-h-screen font-cyber" style={{ backgroundColor: 'var(--bg-primary)' }}>
+            <AppContent />
+          </div>
+        </OfficerAuthProvider>
       </AuthProvider>
     </ThemeProvider>
   );

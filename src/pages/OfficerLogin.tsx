@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Shield, Zap, Eye, EyeOff, Phone, User } from 'lucide-react';
+import { Shield, Zap, Phone, User, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useOfficerAuth } from '../contexts/OfficerAuthContext';
 import toast from 'react-hot-toast';
 
 export const OfficerLogin: React.FC = () => {
   const { isDark } = useTheme();
+  const { login } = useOfficerAuth();
+  const navigate = useNavigate();
   const [loginMethod, setLoginMethod] = useState<'mobile' | 'telegram'>('mobile');
   const [mobile, setMobile] = useState('');
   const [telegramId, setTelegramId] = useState('');
@@ -13,12 +17,10 @@ export const OfficerLogin: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSendOtp = async () => {
-    if (loginMethod === 'mobile' && !mobile.trim()) {
-      toast.error('Please enter your mobile number');
-      return;
-    }
-    if (loginMethod === 'telegram' && !telegramId.trim()) {
-      toast.error('Please enter your Telegram ID');
+    const identifier = loginMethod === 'mobile' ? mobile : telegramId;
+    
+    if (!identifier.trim()) {
+      toast.error(`Please enter your ${loginMethod === 'mobile' ? 'mobile number' : 'Telegram ID'}`);
       return;
     }
 
@@ -40,16 +42,16 @@ export const OfficerLogin: React.FC = () => {
 
     setIsSubmitting(true);
     
-    // Simulate OTP verification
-    setTimeout(() => {
+    try {
+      const identifier = loginMethod === 'mobile' ? mobile : telegramId;
+      await login(identifier, otp);
+      toast.success('Login successful!');
+      navigate('/officer/dashboard');
+    } catch (error) {
+      toast.error('Invalid OTP');
+    } finally {
       setIsSubmitting(false);
-      if (otp === '123456') {
-        toast.success('Login successful!');
-        // Redirect to officer dashboard
-      } else {
-        toast.error('Invalid OTP');
-      }
-    }, 1500);
+    }
   };
 
   return (
@@ -57,6 +59,19 @@ export const OfficerLogin: React.FC = () => {
       isDark ? 'bg-dark-gradient' : 'bg-gradient-to-br from-soft-white to-gray-100'
     }`}>
       <div className="max-w-md w-full space-y-8">
+        {/* Back to Home */}
+        <div className="flex items-center">
+          <Link
+            to="/"
+            className={`flex items-center space-x-2 text-sm transition-colors ${
+              isDark ? 'text-gray-400 hover:text-cyber-teal' : 'text-gray-600 hover:text-cyber-teal'
+            }`}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
