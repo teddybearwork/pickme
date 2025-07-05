@@ -11,6 +11,7 @@ import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
 import { Dashboard } from './pages/Dashboard';
 import { Officers } from './pages/Officers';
+import { OfficerRegistrations } from './pages/OfficerRegistrations';
 import { QueryHistory } from './pages/QueryHistory';
 import { Credits } from './pages/Credits';
 import { APIManagement } from './pages/APIManagement';
@@ -53,6 +54,13 @@ const AppContent: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <Officers />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/registrations" element={
+          <ProtectedRoute>
+            <Layout>
+              <OfficerRegistrations />
             </Layout>
           </ProtectedRoute>
         } />

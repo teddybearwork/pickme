@@ -9,19 +9,21 @@ import {
   Activity, 
   Settings, 
   LogOut,
-  Zap
+  Zap,
+  UserPlus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Shield },
-  { name: 'Officers', href: '/officers', icon: Users },
-  { name: 'Query History', href: '/queries', icon: Search },
-  { name: 'Credits & Billing', href: '/credits', icon: CreditCard },
-  { name: 'API Management', href: '/apis', icon: Key },
-  { name: 'Live Requests', href: '/live', icon: Activity },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: Shield },
+  { name: 'Officers', href: '/admin/officers', icon: Users },
+  { name: 'Registrations', href: '/admin/registrations', icon: UserPlus },
+  { name: 'Query History', href: '/admin/queries', icon: Search },
+  { name: 'Credits & Billing', href: '/admin/credits', icon: CreditCard },
+  { name: 'API Management', href: '/admin/apis', icon: Key },
+  { name: 'Live Requests', href: '/admin/live', icon: Activity },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export const Sidebar: React.FC = () => {
