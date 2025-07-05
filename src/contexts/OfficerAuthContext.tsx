@@ -4,6 +4,7 @@ interface OfficerUser {
   id: string;
   name: string;
   mobile: string;
+  email: string;
   telegram_id?: string;
   credits_remaining: number;
   total_credits: number;
@@ -12,7 +13,7 @@ interface OfficerUser {
 
 interface OfficerAuthContextType {
   officer: OfficerUser | null;
-  login: (identifier: string, otp: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -45,6 +46,7 @@ export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ childr
           id: '1',
           name: 'Inspector Ramesh Kumar',
           mobile: '+91 9791103607',
+          email: 'ramesh@police.gov.in',
           telegram_id: '@rameshcop',
           credits_remaining: 32,
           total_credits: 50,
@@ -57,18 +59,30 @@ export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ childr
     }
   }, []);
 
-  const login = async (identifier: string, otp: string) => {
+  const login = async (identifier: string, password: string) => {
     setIsLoading(true);
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    if (otp === '123456') {
+    // Check demo credentials
+    const validCredentials = [
+      { identifier: 'ramesh@police.gov.in', password: 'officer123' },
+      { identifier: '+91 9791103607', password: 'officer123' },
+      { identifier: '9791103607', password: 'officer123' }
+    ];
+    
+    const isValid = validCredentials.some(cred => 
+      cred.identifier === identifier && cred.password === password
+    );
+    
+    if (isValid) {
       const mockOfficer: OfficerUser = {
         id: '1',
         name: 'Inspector Ramesh Kumar',
-        mobile: identifier.includes('@') ? '+91 9791103607' : identifier,
-        telegram_id: identifier.includes('@') ? identifier : '@rameshcop',
+        mobile: '+91 9791103607',
+        email: 'ramesh@police.gov.in',
+        telegram_id: '@rameshcop',
         credits_remaining: 32,
         total_credits: 50,
         status: 'Active'
@@ -77,7 +91,7 @@ export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ childr
       setOfficer(mockOfficer);
       localStorage.setItem('officer_auth_token', 'mock-officer-jwt-token');
     } else {
-      throw new Error('Invalid OTP');
+      throw new Error('Invalid credentials');
     }
     
     setIsLoading(false);

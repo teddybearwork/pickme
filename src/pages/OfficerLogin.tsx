@@ -28,22 +28,20 @@ export const OfficerLogin: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!loginData.identifier.trim() || !loginData.password.trim()) {
+      toast.error('Please enter both email/mobile and password');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock login validation
-      if (loginData.identifier === 'ramesh@police.gov.in' && loginData.password === 'officer123') {
-        await login(loginData.identifier, 'approved');
-        toast.success('Login successful!');
-        navigate('/officer/dashboard');
-      } else {
-        toast.error('Invalid credentials');
-      }
+      await login(loginData.identifier, loginData.password);
+      toast.success('Login successful!');
+      navigate('/officer/dashboard');
     } catch (error) {
-      toast.error('Login failed');
+      toast.error('Invalid credentials. Please check your email/mobile and password.');
     } finally {
       setIsSubmitting(false);
     }
@@ -51,6 +49,13 @@ export const OfficerLogin: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!registerData.name.trim() || !registerData.station.trim() || 
+        !registerData.email.trim() || !registerData.mobile.trim()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -71,7 +76,7 @@ export const OfficerLogin: React.FC = () => {
         additional_info: ''
       });
     } catch (error) {
-      toast.error('Registration failed');
+      toast.error('Registration failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -225,6 +230,9 @@ export const OfficerLogin: React.FC = () => {
                   <div className="space-y-1 text-xs">
                     <p className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                       Email: <span className="text-cyber-teal">ramesh@police.gov.in</span>
+                    </p>
+                    <p className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                      Mobile: <span className="text-cyber-teal">+91 9791103607</span>
                     </p>
                     <p className={isDark ? 'text-gray-300' : 'text-gray-700'}>
                       Password: <span className="text-cyber-teal">officer123</span>
