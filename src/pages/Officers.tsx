@@ -17,6 +17,7 @@ export const Officers: React.FC = () => {
     email: '',
     mobile: '',
     telegram_id: '',
+    password: '',
     department: '',
     rank: '',
     badge_number: '',
@@ -43,6 +44,7 @@ export const Officers: React.FC = () => {
       email: '',
       mobile: '',
       telegram_id: '',
+      password: '',
       department: '',
       rank: '',
       badge_number: '',
@@ -61,6 +63,7 @@ export const Officers: React.FC = () => {
       email: officer.email,
       mobile: officer.mobile,
       telegram_id: officer.telegram_id || '',
+      password: '', // Don't pre-fill password for security
       department: officer.department || '',
       rank: officer.rank || '',
       badge_number: officer.badge_number || '',
@@ -92,6 +95,7 @@ export const Officers: React.FC = () => {
         email: '',
         mobile: '',
         telegram_id: '',
+        password: '',
         department: '',
         rank: '',
         badge_number: '',
@@ -503,6 +507,30 @@ export const Officers: React.FC = () => {
                   />
                 </div>
 
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    required={!editingOfficer}
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                      isDark 
+                        ? 'bg-crisp-black text-white placeholder-gray-500' 
+                        : 'bg-white text-gray-900 placeholder-gray-400'
+                    }`}
+                    placeholder={editingOfficer ? "Leave blank to keep current password" : "Enter password"}
+                  />
+                  {editingOfficer && (
+                    <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Leave blank to keep the current password
+                    </p>
+                  )}
+                </div>
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${
                     isDark ? 'text-gray-300' : 'text-gray-700'

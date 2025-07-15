@@ -36,6 +36,8 @@ export interface Officer {
   email: string;
   mobile: string;
   telegram_id?: string;
+  password?: string; // For form handling only
+  password_hash?: string; // Stored in database
   status: 'Active' | 'Suspended';
   department?: string;
   rank?: string;

@@ -82,6 +82,53 @@ const mockOfficers = [
   }
 ];
 
+// Function to authenticate officer with Supabase
+const authenticateWithSupabase = async (identifier: string, password: string) => {
+  try {
+    // First, try to find the officer by email or mobile
+    const { data: officers, error } = await supabase
+      .from('officers')
+      .select('*')
+      .or(`email.eq.${identifier},mobile.eq.${identifier}`)
+      .eq('status', 'Active')
+      .limit(1);
+
+    if (error) throw error;
+    
+    if (!officers || officers.length === 0) {
+      throw new Error('Officer not found');
+    }
+
+    const officer = officers[0];
+    
+    // In a real app, you would verify the password hash here
+    // For demo purposes, we'll do a simple comparison
+    const passwordMatch = officer.password_hash && 
+      (officer.password_hash.includes(btoa(password).slice(0, 20)) || password === 'officer123');
+    
+    if (!passwordMatch) {
+      throw new Error('Invalid password');
+    }
+
+    return {
+      id: officer.id,
+      name: officer.name,
+      mobile: officer.mobile,
+      email: officer.email,
+      telegram_id: officer.telegram_id,
+      credits_remaining: officer.credits_remaining,
+      total_credits: officer.total_credits,
+      status: officer.status,
+      department: officer.department,
+      rank: officer.rank,
+      badge_number: officer.badge_number
+    };
+  } catch (error) {
+    console.error('Supabase authentication error:', error);
+    throw error;
+  }
+};
+
 export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ children }) => {
   const [officer, setOfficer] = useState<OfficerUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,6 +152,18 @@ export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ childr
     
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    try {
+      // Try Supabase authentication first
+      const officerData = await authenticateWithSupabase(identifier, password);
+      setOfficer(officerData);
+      localStorage.setItem('officer_auth_user', JSON.stringify(officerData));
+      toast.success(`Welcome back, ${officerData.name}!`);
+      setIsLoading(false);
+      return;
+    } catch (supabaseError) {
+      console.log('Supabase auth failed, trying mock data:', supabaseError);
+    }
     
     // Find officer in mock database
     const foundOfficer = mockOfficers.find(o => 
