@@ -1,20 +1,94 @@
 import React, { useState } from 'react';
-import { Key, Plus, Edit2, Trash2, Eye, EyeOff, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Key, Plus, Edit2, Trash2, Eye, EyeOff, Activity, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { StatusBadge } from '../components/UI/StatusBadge';
 import { useData } from '../hooks/useData';
 import { useTheme } from '../contexts/ThemeContext';
+import toast from 'react-hot-toast';
 
 export const APIManagement: React.FC = () => {
-  const { apiKeys, isLoading } = useData();
+  const { apiKeys, isLoading, addAPIKey, updateAPIKey, deleteAPIKey } = useData();
   const { isDark } = useTheme();
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAPI, setEditingAPI] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    provider: '',
+    key: '',
+    status: 'Active' as 'Active' | 'Inactive'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleKeyVisibility = (keyId: string) => {
     setShowKeys(prev => ({
       ...prev,
       [keyId]: !prev[keyId]
     }));
+  };
+
+  const handleAddAPI = () => {
+    setFormData({
+      name: '',
+      provider: '',
+      key: '',
+      status: 'Active'
+    });
+    setEditingAPI(null);
+    setShowAddModal(true);
+  };
+
+  const handleEditAPI = (apiKey: any) => {
+    setFormData({
+      name: apiKey.name,
+      provider: apiKey.provider,
+      key: apiKey.key,
+      status: apiKey.status
+    });
+    setEditingAPI(apiKey);
+    setShowAddModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (editingAPI) {
+        updateAPIKey(editingAPI.id, formData);
+        toast.success('API key updated successfully!');
+      } else {
+        addAPIKey(formData);
+        toast.success('API key added successfully!');
+      }
+
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        provider: '',
+        key: '',
+        status: 'Active'
+      });
+    } catch (error) {
+      toast.error('Failed to save API key');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAPI = (apiKey: any) => {
+    if (window.confirm(`Are you sure you want to delete ${apiKey.name}?`)) {
+      deleteAPIKey(apiKey.id);
+      toast.success('API key deleted successfully!');
+    }
+  };
+
+  const handleToggleStatus = (apiKey: any) => {
+    const newStatus = apiKey.status === 'Active' ? 'Inactive' : 'Active';
+    updateAPIKey(apiKey.id, { status: newStatus });
+    toast.success(`API key ${newStatus.toLowerCase()} successfully!`);
   };
 
   const filteredAPIKeys = apiKeys.filter(apiKey => 
@@ -48,7 +122,10 @@ export const APIManagement: React.FC = () => {
             Manage API keys and integrations for PRO services
           </p>
         </div>
-        <button className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2">
+        <button 
+          onClick={handleAddAPI}
+          className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2"
+        >
           <Plus className="w-4 h-4" />
           <span>Add API Key</span>
         </button>
@@ -224,18 +301,25 @@ export const APIManagement: React.FC = () => {
             {/* Actions */}
             <div className="flex justify-between items-center mt-6 pt-4 border-t border-cyber-teal/20">
               <div className="flex space-x-2">
-                <button className={`p-2 rounded transition-colors ${
+                <button 
+                  onClick={() => handleEditAPI(apiKey)}
+                  className={`p-2 rounded transition-colors ${
                   isDark ? 'text-gray-400 hover:text-cyber-teal' : 'text-gray-600 hover:text-cyber-teal'
                 }`}>
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button className={`p-2 rounded transition-colors ${
+                <button 
+                  onClick={() => handleDeleteAPI(apiKey)}
+                  className={`p-2 rounded transition-colors ${
                   isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-600 hover:text-red-400'
                 }`}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => handleToggleStatus(apiKey)}
+                className="flex items-center space-x-2 transition-colors hover:opacity-80"
+              >
                 <div className={`w-2 h-2 rounded-full ${
                   apiKey.status === 'Active' ? 'bg-green-400' : 'bg-red-400'
                 } animate-pulse`} />
@@ -244,11 +328,139 @@ export const APIManagement: React.FC = () => {
                 }`}>
                   {apiKey.status === 'Active' ? 'Operational' : 'Inactive'}
                 </span>
-              </div>
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Add/Edit API Key Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className={`max-w-md w-full rounded-lg p-6 ${
+            isDark ? 'bg-muted-graphite border border-cyber-teal/20' : 'bg-white border border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {editingAPI ? 'Edit API Key' : 'Add New API Key'}
+              </h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className={`p-2 transition-colors ${
+                  isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  API Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="e.g., Signzy Phone Verification"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Provider
+                </label>
+                <select
+                  value={formData.provider}
+                  onChange={(e) => setFormData(prev => ({ ...prev, provider: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white' 
+                      : 'bg-white text-gray-900'
+                  }`}
+                >
+                  <option value="">Select Provider</option>
+                  <option value="Signzy">Signzy</option>
+                  <option value="Surepass">Surepass</option>
+                  <option value="TrueCaller">TrueCaller</option>
+                  <option value="EmailValidator">EmailValidator</option>
+                  <option value="Custom">Custom Provider</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  API Key
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.key}
+                  onChange={(e) => setFormData(prev => ({ ...prev, key: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal font-mono ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="sk_test_4f8b2c1a9e3d7f6b5a8c9e2d1f4b7a3c"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Inactive' }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white' 
+                      : 'bg-white text-gray-900'
+                  }`}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-cyber-gradient text-white rounded-lg hover:shadow-cyber transition-all duration-200 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Saving...' : editingAPI ? 'Update API Key' : 'Add API Key'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* No Results */}
       {filteredAPIKeys.length === 0 && (

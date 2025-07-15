@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Settings as SettingsIcon, User, Shield, Bell, Database, Key, Globe, Save, RefreshCw } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 export const Settings: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -54,6 +56,54 @@ export const Settings: React.FC = () => {
         [key]: value
       }
     }));
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast.success('Settings saved successfully!');
+    } catch (error) {
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetSettings = () => {
+    if (window.confirm('Are you sure you want to reset all settings to default values?')) {
+      setSettings({
+        notifications: {
+          email: true,
+          push: false,
+          sms: true,
+          queryAlerts: true,
+          systemAlerts: true,
+          creditAlerts: true
+        },
+        security: {
+          twoFactor: false,
+          sessionTimeout: 30,
+          ipWhitelist: '',
+          auditLogs: true
+        },
+        system: {
+          autoRefresh: true,
+          refreshInterval: 30,
+          maxConcurrentQueries: 100,
+          defaultCredits: 50,
+          rateLimitPerHour: 1000
+        },
+        api: {
+          timeout: 30,
+          retryAttempts: 3,
+          cacheEnabled: true,
+          cacheDuration: 300
+        }
+      });
+      toast.success('Settings reset to default values');
+    }
   };
 
   const renderGeneralSettings = () => (
@@ -384,13 +434,20 @@ export const Settings: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="bg-electric-blue/20 text-electric-blue px-4 py-2 rounded-lg hover:bg-electric-blue/30 transition-all duration-200 flex items-center space-x-2">
+          <button 
+            onClick={handleResetSettings}
+            className="bg-electric-blue/20 text-electric-blue px-4 py-2 rounded-lg hover:bg-electric-blue/30 transition-all duration-200 flex items-center space-x-2"
+          >
             <RefreshCw className="w-4 h-4" />
             <span>Reset</span>
           </button>
-          <button className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2">
+          <button 
+            onClick={handleSaveSettings}
+            disabled={isSubmitting}
+            className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2 disabled:opacity-50"
+          >
             <Save className="w-4 h-4" />
-            <span>Save Changes</span>
+            <span>{isSubmitting ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
       </div>

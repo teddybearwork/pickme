@@ -4,6 +4,7 @@ import { StatusBadge } from '../components/UI/StatusBadge';
 import { useData } from '../hooks/useData';
 import { useTheme } from '../contexts/ThemeContext';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 export const QueryHistory: React.FC = () => {
   const { queries, isLoading } = useData();
@@ -23,6 +24,35 @@ export const QueryHistory: React.FC = () => {
     
     return matchesSearch && matchesType && matchesStatus;
   });
+
+  const handleExportCSV = () => {
+    const csvContent = [
+      ['Officer', 'Type', 'Query Input', 'Source', 'Result', 'Credits', 'Status', 'Timestamp'].join(','),
+      ...filteredQueries.map(query => [
+        query.officer_name,
+        query.type,
+        query.input,
+        query.source,
+        query.result_summary.replace(/,/g, ';'),
+        query.credits_used,
+        query.status,
+        query.timestamp
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `query-history-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('Query history exported successfully!');
+  };
+
+  const handleGenerateReport = () => {
+    toast.success('Report generation started. You will be notified when ready.');
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -58,11 +88,17 @@ export const QueryHistory: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="bg-electric-blue/20 text-electric-blue px-4 py-2 rounded-lg hover:bg-electric-blue/30 transition-all duration-200 flex items-center space-x-2">
+          <button 
+            onClick={handleExportCSV}
+            className="bg-electric-blue/20 text-electric-blue px-4 py-2 rounded-lg hover:bg-electric-blue/30 transition-all duration-200 flex items-center space-x-2"
+          >
             <Download className="w-4 h-4" />
             <span>Export CSV</span>
           </button>
-          <button className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2">
+          <button 
+            onClick={handleGenerateReport}
+            className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2"
+          >
             <Calendar className="w-4 h-4" />
             <span>Generate Report</span>
           </button>

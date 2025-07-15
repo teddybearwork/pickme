@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
-import { Search, Filter, Download, Plus, Edit2, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Search, Filter, Download, Plus, Edit2, Trash2, UserCheck, UserX, X } from 'lucide-react';
 import { StatusBadge } from '../components/UI/StatusBadge';
 import { useData } from '../hooks/useData';
 import { useTheme } from '../contexts/ThemeContext';
 import { Officer } from '../types';
+import toast from 'react-hot-toast';
 
 export const Officers: React.FC = () => {
-  const { officers, isLoading } = useData();
+  const { officers, isLoading, addOfficer, updateOfficer, deleteOfficer } = useData();
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingOfficer, setEditingOfficer] = useState<Officer | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    mobile: '',
+    telegram_id: '',
+    status: 'Active' as 'Active' | 'Suspended',
+    total_credits: 50
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredOfficers = officers.filter(officer => {
     const matchesSearch = officer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -20,6 +31,84 @@ export const Officers: React.FC = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  const handleAddOfficer = () => {
+    setFormData({
+      name: '',
+      mobile: '',
+      telegram_id: '',
+      status: 'Active',
+      total_credits: 50
+    });
+    setEditingOfficer(null);
+    setShowAddModal(true);
+  };
+
+  const handleEditOfficer = (officer: Officer) => {
+    setFormData({
+      name: officer.name,
+      mobile: officer.mobile,
+      telegram_id: officer.telegram_id,
+      status: officer.status,
+      total_credits: officer.total_credits
+    });
+    setEditingOfficer(officer);
+    setShowAddModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (editingOfficer) {
+        updateOfficer(editingOfficer.id, {
+          ...formData,
+          credits_remaining: formData.total_credits // Reset credits when editing
+        });
+        toast.success('Officer updated successfully!');
+      } else {
+        const newOfficer = {
+          ...formData,
+          registered_on: new Date().toLocaleDateString(),
+          last_active: new Date().toLocaleString(),
+          credits_remaining: formData.total_credits,
+          total_queries: 0,
+          avatar: `https://images.pexels.com/photos/${Math.floor(Math.random() * 1000000) + 1000000}/pexels-photo-${Math.floor(Math.random() * 1000000) + 1000000}.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2`
+        };
+        addOfficer(newOfficer);
+        toast.success('Officer added successfully!');
+      }
+
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        mobile: '',
+        telegram_id: '',
+        status: 'Active',
+        total_credits: 50
+      });
+    } catch (error) {
+      toast.error('Failed to save officer');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteOfficer = (officer: Officer) => {
+    if (window.confirm(`Are you sure you want to delete ${officer.name}?`)) {
+      deleteOfficer(officer.id);
+      toast.success('Officer deleted successfully!');
+    }
+  };
+
+  const handleToggleStatus = (officer: Officer) => {
+    const newStatus = officer.status === 'Active' ? 'Suspended' : 'Active';
+    updateOfficer(officer.id, { status: newStatus });
+    toast.success(`Officer ${newStatus.toLowerCase()} successfully!`);
+  };
 
   if (isLoading) {
     return (
@@ -41,7 +130,10 @@ export const Officers: React.FC = () => {
             Manage law enforcement personnel and their access
           </p>
         </div>
-        <button className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2">
+        <button 
+          onClick={handleAddOfficer}
+          className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2"
+        >
           <Plus className="w-4 h-4" />
           <span>Add Officer</span>
         </button>
@@ -234,36 +326,182 @@ export const Officers: React.FC = () => {
             {/* Actions */}
             <div className="flex justify-between mt-4 pt-4 border-t border-cyber-teal/20">
               <div className="flex space-x-2">
-                <button className={`p-2 transition-colors ${
+                <button 
+                  onClick={() => handleEditOfficer(officer)}
+                  className={`p-2 transition-colors ${
                   isDark ? 'text-gray-400 hover:text-cyber-teal' : 'text-gray-600 hover:text-cyber-teal'
                 }`}>
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button className={`p-2 transition-colors ${
+                <button 
+                  onClick={() => handleDeleteOfficer(officer)}
+                  className={`p-2 transition-colors ${
                   isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-600 hover:text-red-400'
                 }`}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex space-x-2">
-                {officer.status === 'Active' ? (
-                  <button className={`p-2 transition-colors ${
-                    isDark ? 'text-gray-400 hover:text-yellow-400' : 'text-gray-600 hover:text-yellow-400'
-                  }`}>
-                    <UserX className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button className={`p-2 transition-colors ${
-                    isDark ? 'text-gray-400 hover:text-green-400' : 'text-gray-600 hover:text-green-400'
-                  }`}>
-                    <UserCheck className="w-4 h-4" />
-                  </button>
-                )}
+                <button 
+                  onClick={() => handleToggleStatus(officer)}
+                  className={`p-2 transition-colors ${
+                    officer.status === 'Active'
+                      ? isDark ? 'text-gray-400 hover:text-yellow-400' : 'text-gray-600 hover:text-yellow-400'
+                      : isDark ? 'text-gray-400 hover:text-green-400' : 'text-gray-600 hover:text-green-400'
+                  }`}
+                >
+                  {officer.status === 'Active' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                </button>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Add/Edit Officer Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className={`max-w-md w-full rounded-lg p-6 ${
+            isDark ? 'bg-muted-graphite border border-cyber-teal/20' : 'bg-white border border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                {editingOfficer ? 'Edit Officer' : 'Add New Officer'}
+              </h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className={`p-2 transition-colors ${
+                  isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="Enter officer's full name"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.mobile}
+                  onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Telegram ID
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.telegram_id}
+                  onChange={(e) => setFormData(prev => ({ ...prev, telegram_id: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="@username"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Suspended' }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white' 
+                      : 'bg-white text-gray-900'
+                  }`}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Suspended">Suspended</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Total Credits
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={formData.total_credits}
+                  onChange={(e) => setFormData(prev => ({ ...prev, total_credits: parseInt(e.target.value) || 0 }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="50"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-cyber-gradient text-white rounded-lg hover:shadow-cyber transition-all duration-200 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Saving...' : editingOfficer ? 'Update Officer' : 'Add Officer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* No Results */}
       {filteredOfficers.length === 0 && (

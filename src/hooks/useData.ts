@@ -332,6 +332,27 @@ export const useData = () => {
     return newTransaction;
   };
 
+  const addAPIKey = (apiKey: Omit<APIKey, 'id' | 'usage_count' | 'last_used'>) => {
+    const newAPIKey = { 
+      ...apiKey, 
+      id: Date.now().toString(),
+      usage_count: 0,
+      last_used: 'Never'
+    };
+    setAPIKeys(prev => [...prev, newAPIKey]);
+    return newAPIKey;
+  };
+
+  const updateAPIKey = (id: string, updates: Partial<APIKey>) => {
+    setAPIKeys(prev => prev.map(apiKey => 
+      apiKey.id === id ? { ...apiKey, ...updates } : apiKey
+    ));
+  };
+
+  const deleteAPIKey = (id: string) => {
+    setAPIKeys(prev => prev.filter(apiKey => apiKey.id !== id));
+  };
+
   const updateRegistration = (id: string, updates: any) => {
     setRegistrations(prev => prev.map(reg => 
       reg.id === id ? { ...reg, ...updates } : reg
@@ -356,6 +377,9 @@ export const useData = () => {
     updateOfficer,
     deleteOfficer,
     addTransaction,
+    addAPIKey,
+    updateAPIKey,
+    deleteAPIKey,
     updateRegistration
   };
 };

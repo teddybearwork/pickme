@@ -3,17 +3,29 @@ import { Activity, Zap, Clock, CheckCircle, XCircle, AlertCircle, Pause, Play, R
 import { StatusBadge } from '../components/UI/StatusBadge';
 import { useData } from '../hooks/useData';
 import { useTheme } from '../contexts/ThemeContext';
+import toast from 'react-hot-toast';
 
 export const LiveRequests: React.FC = () => {
   const { liveRequests, isLoading } = useData();
   const { isDark } = useTheme();
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
   const filteredRequests = liveRequests.filter(request => {
     if (filter === 'all') return true;
     return request.status === filter;
   });
+
+  const handleRefresh = () => {
+    setLastRefresh(new Date());
+    toast.success('Live requests refreshed');
+  };
+
+  const handleToggleAutoRefresh = () => {
+    setIsAutoRefresh(!isAutoRefresh);
+    toast.success(isAutoRefresh ? 'Auto-refresh paused' : 'Auto-refresh resumed');
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -54,7 +66,7 @@ export const LiveRequests: React.FC = () => {
         </div>
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+            onClick={handleToggleAutoRefresh}
             className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 ${
               isAutoRefresh 
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
@@ -64,7 +76,10 @@ export const LiveRequests: React.FC = () => {
             {isAutoRefresh ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             <span>{isAutoRefresh ? 'Pause' : 'Resume'} Auto-refresh</span>
           </button>
-          <button className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2">
+          <button 
+            onClick={handleRefresh}
+            className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2"
+          >
             <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
@@ -182,8 +197,8 @@ export const LiveRequests: React.FC = () => {
             </h3>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Live
+              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Last updated: {lastRefresh.toLocaleTimeString()}
               </span>
             </div>
           </div>

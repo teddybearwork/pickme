@@ -1,15 +1,25 @@
 import React, { useState } from 'react';
-import { CreditCard, Plus, Minus, RefreshCw, DollarSign, TrendingUp, Calendar, Filter, Download } from 'lucide-react';
+import { CreditCard, Plus, Minus, RefreshCw, DollarSign, TrendingUp, Calendar, Filter, Download, X } from 'lucide-react';
 import { useData } from '../hooks/useData';
 import { useTheme } from '../contexts/ThemeContext';
 import { StatCard } from '../components/UI/StatCard';
+import toast from 'react-hot-toast';
 
 export const Credits: React.FC = () => {
-  const { transactions, officers, isLoading } = useData();
+  const { transactions, officers, isLoading, addTransaction, updateOfficer } = useData();
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [formData, setFormData] = useState({
+    officer_id: '',
+    action: 'Top-up' as 'Renewal' | 'Deduction' | 'Top-up' | 'Refund',
+    credits: 0,
+    payment_mode: 'Department Budget',
+    remarks: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.officer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -19,6 +29,73 @@ export const Credits: React.FC = () => {
     
     return matchesSearch && matchesAction;
   });
+
+  const handleAddCredits = () => {
+    setFormData({
+      officer_id: '',
+      action: 'Top-up',
+      credits: 0,
+      payment_mode: 'Department Budget',
+      remarks: ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const selectedOfficer = officers.find(o => o.id === formData.officer_id);
+      if (!selectedOfficer) {
+        toast.error('Please select an officer');
+        return;
+      }
+
+      // Add transaction
+      const newTransaction = {
+        officer_id: formData.officer_id,
+        officer_name: selectedOfficer.name,
+        action: formData.action,
+        credits: formData.action === 'Deduction' ? -Math.abs(formData.credits) : Math.abs(formData.credits),
+        payment_mode: formData.payment_mode,
+        remarks: formData.remarks || `${formData.action} for ${selectedOfficer.name}`,
+        timestamp: new Date().toLocaleString()
+      };
+
+      addTransaction(newTransaction);
+
+      // Update officer credits
+      const newCreditsRemaining = formData.action === 'Deduction' 
+        ? Math.max(0, selectedOfficer.credits_remaining - Math.abs(formData.credits))
+        : selectedOfficer.credits_remaining + Math.abs(formData.credits);
+
+      const newTotalCredits = ['Renewal', 'Top-up'].includes(formData.action)
+        ? selectedOfficer.total_credits + Math.abs(formData.credits)
+        : selectedOfficer.total_credits;
+
+      updateOfficer(formData.officer_id, {
+        credits_remaining: newCreditsRemaining,
+        total_credits: newTotalCredits
+      });
+
+      toast.success(`Credits ${formData.action.toLowerCase()} successful!`);
+      setShowAddModal(false);
+      setFormData({
+        officer_id: '',
+        action: 'Top-up',
+        credits: 0,
+        payment_mode: 'Department Budget',
+        remarks: ''
+      });
+    } catch (error) {
+      toast.error('Failed to process credit transaction');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const totalCreditsIssued = transactions
     .filter(t => t.action === 'Renewal' || t.action === 'Top-up')
@@ -84,7 +161,10 @@ export const Credits: React.FC = () => {
             <Download className="w-4 h-4" />
             <span>Export Report</span>
           </button>
-          <button className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2">
+          <button 
+            onClick={handleAddCredits}
+            className="bg-cyber-gradient text-white px-4 py-2 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2"
+          >
             <Plus className="w-4 h-4" />
             <span>Add Credits</span>
           </button>
@@ -367,6 +447,159 @@ export const Credits: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Credits Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className={`max-w-md w-full rounded-lg p-6 ${
+            isDark ? 'bg-muted-graphite border border-cyber-teal/20' : 'bg-white border border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Credit Transaction
+              </h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className={`p-2 transition-colors ${
+                  isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Select Officer
+                </label>
+                <select
+                  required
+                  value={formData.officer_id}
+                  onChange={(e) => setFormData(prev => ({ ...prev, officer_id: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white' 
+                      : 'bg-white text-gray-900'
+                  }`}
+                >
+                  <option value="">Choose an officer</option>
+                  {officers.map(officer => (
+                    <option key={officer.id} value={officer.id}>
+                      {officer.name} ({officer.credits_remaining}/{officer.total_credits} credits)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Transaction Type
+                </label>
+                <select
+                  value={formData.action}
+                  onChange={(e) => setFormData(prev => ({ ...prev, action: e.target.value as any }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white' 
+                      : 'bg-white text-gray-900'
+                  }`}
+                >
+                  <option value="Top-up">Top-up</option>
+                  <option value="Renewal">Renewal</option>
+                  <option value="Deduction">Deduction</option>
+                  <option value="Refund">Refund</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Credits Amount
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={formData.credits}
+                  onChange={(e) => setFormData(prev => ({ ...prev, credits: parseInt(e.target.value) || 0 }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="Enter credit amount"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Payment Mode
+                </label>
+                <select
+                  value={formData.payment_mode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, payment_mode: e.target.value }))}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal ${
+                    isDark 
+                      ? 'bg-crisp-black text-white' 
+                      : 'bg-white text-gray-900'
+                  }`}
+                >
+                  <option value="Department Budget">Department Budget</option>
+                  <option value="Government Fund">Government Fund</option>
+                  <option value="Emergency Fund">Emergency Fund</option>
+                  <option value="Query Usage">Query Usage</option>
+                </select>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Remarks (Optional)
+                </label>
+                <textarea
+                  value={formData.remarks}
+                  onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
+                  rows={3}
+                  className={`w-full px-3 py-2 border border-cyber-teal/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyber-teal resize-none ${
+                    isDark 
+                      ? 'bg-crisp-black text-white placeholder-gray-500' 
+                      : 'bg-white text-gray-900 placeholder-gray-400'
+                  }`}
+                  placeholder="Add any additional notes..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-cyber-gradient text-white rounded-lg hover:shadow-cyber transition-all duration-200 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Processing...' : 'Process Transaction'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
