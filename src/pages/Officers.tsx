@@ -126,3 +126,4 @@ export const Officers: React.FC = () => {
         toast.error('Failed to update officer status');
       });
   };
+}
