@@ -13,7 +13,7 @@ import { OfficerRegistration } from '../lib/supabase';
 export const OfficerRegistrations: React.FC = () => {
   const { isDark } = useTheme();
   const { user } = useAuth();
-  const { registrations, updateRegistration } = useData();
+  const { registrations, updateRegistration } = useSupabaseData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<OfficerRegistration | null>(null);
