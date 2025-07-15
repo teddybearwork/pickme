@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Search, Filter, Download, Calendar, Clock, User, Database, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { StatusBadge } from '../components/UI/StatusBadge';
-import { useData } from '../hooks/useData';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useTheme } from '../contexts/ThemeContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export const QueryHistory: React.FC = () => {
-  const { queries, isLoading } = useData();
+  const { queries, isLoading } = useSupabaseData();
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -16,8 +16,8 @@ export const QueryHistory: React.FC = () => {
 
   const filteredQueries = queries.filter(query => {
     const matchesSearch = query.officer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         query.input.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         query.source.toLowerCase().includes(searchTerm.toLowerCase());
+                         query.input_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (query.source && query.source.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesType = typeFilter === 'all' || query.type === typeFilter;
     const matchesStatus = statusFilter === 'all' || query.status === statusFilter;
@@ -31,12 +31,12 @@ export const QueryHistory: React.FC = () => {
       ...filteredQueries.map(query => [
         query.officer_name,
         query.type,
-        query.input,
-        query.source,
-        query.result_summary.replace(/,/g, ';'),
+        query.input_data,
+        query.source || 'N/A',
+        (query.result_summary || '').replace(/,/g, ';'),
         query.credits_used,
         query.status,
-        query.timestamp
+        new Date(query.created_at).toLocaleString()
       ].join(','))
     ].join('\n');
 
@@ -322,17 +322,17 @@ export const QueryHistory: React.FC = () => {
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    {query.input}
+                    {query.input_data}
                   </td>
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>
-                    {query.source}
+                    {query.source || 'N/A'}
                   </td>
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    {query.result_summary}
+                    {query.result_summary || 'Processing...'}
                   </td>
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-white' : 'text-gray-900'
@@ -348,7 +348,7 @@ export const QueryHistory: React.FC = () => {
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>
-                    {query.timestamp}
+                    {new Date(query.created_at).toLocaleString()}
                   </td>
                 </tr>
               ))}

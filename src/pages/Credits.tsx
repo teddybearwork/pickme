@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { CreditCard, Plus, Minus, RefreshCw, DollarSign, TrendingUp, Calendar, Filter, Download, X } from 'lucide-react';
-import { useData } from '../hooks/useData';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useTheme } from '../contexts/ThemeContext';
-import { StatCard } from '../components/UI/StatCard';
 import toast from 'react-hot-toast';
 
 export const Credits: React.FC = () => {
-  const { transactions, officers, isLoading, addTransaction, updateOfficer } = useData();
+  const { transactions, officers, isLoading, addTransaction } = useSupabaseData();
   const { isDark } = useTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
@@ -46,7 +45,6 @@ export const Credits: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const selectedOfficer = officers.find(o => o.id === formData.officer_id);
       if (!selectedOfficer) {
@@ -54,34 +52,15 @@ export const Credits: React.FC = () => {
         return;
       }
 
-      // Add transaction
-      const newTransaction = {
+      await addTransaction({
         officer_id: formData.officer_id,
         officer_name: selectedOfficer.name,
         action: formData.action,
         credits: formData.action === 'Deduction' ? -Math.abs(formData.credits) : Math.abs(formData.credits),
         payment_mode: formData.payment_mode,
-        remarks: formData.remarks || `${formData.action} for ${selectedOfficer.name}`,
-        timestamp: new Date().toLocaleString()
-      };
-
-      addTransaction(newTransaction);
-
-      // Update officer credits
-      const newCreditsRemaining = formData.action === 'Deduction' 
-        ? Math.max(0, selectedOfficer.credits_remaining - Math.abs(formData.credits))
-        : selectedOfficer.credits_remaining + Math.abs(formData.credits);
-
-      const newTotalCredits = ['Renewal', 'Top-up'].includes(formData.action)
-        ? selectedOfficer.total_credits + Math.abs(formData.credits)
-        : selectedOfficer.total_credits;
-
-      updateOfficer(formData.officer_id, {
-        credits_remaining: newCreditsRemaining,
-        total_credits: newTotalCredits
+        remarks: formData.remarks || `${formData.action} for ${selectedOfficer.name}`
       });
 
-      toast.success(`Credits ${formData.action.toLowerCase()} successful!`);
       setShowAddModal(false);
       setFormData({
         officer_id: '',
@@ -91,7 +70,7 @@ export const Credits: React.FC = () => {
         remarks: ''
       });
     } catch (error) {
-      toast.error('Failed to process credit transaction');
+      console.error('Error processing transaction:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -434,12 +413,12 @@ export const Credits: React.FC = () => {
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>
-                    {transaction.remarks}
+                    {transaction.remarks || 'N/A'}
                   </td>
                   <td className={`px-6 py-4 text-sm ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>
-                    {transaction.timestamp}
+                    {new Date(transaction.created_at).toLocaleString()}
                   </td>
                 </tr>
               ))}

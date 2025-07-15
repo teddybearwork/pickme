@@ -5,25 +5,10 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useData } from '../hooks/useData';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import toast from 'react-hot-toast';
 
-interface RegistrationRequest {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  station: string;
-  department: string;
-  rank: string;
-  badge_number: string;
-  additional_info: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submitted_at: string;
-  reviewed_at?: string;
-  reviewed_by?: string;
-  rejection_reason?: string;
-}
+import { OfficerRegistration } from '../lib/supabase';
 
 export const OfficerRegistrations: React.FC = () => {
   const { isDark } = useTheme();
@@ -31,12 +16,12 @@ export const OfficerRegistrations: React.FC = () => {
   const { registrations, updateRegistration } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedRequest, setSelectedRequest] = useState<RegistrationRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<OfficerRegistration | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const filteredRegistrations = registrations.filter((reg: RegistrationRequest) => {
+  const filteredRegistrations = registrations.filter((reg: OfficerRegistration) => {
     const matchesSearch = reg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reg.mobile.includes(searchTerm) ||
@@ -47,21 +32,14 @@ export const OfficerRegistrations: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleApprove = async (registration: RegistrationRequest) => {
+  const handleApprove = async (registration: OfficerRegistration) => {
     setIsProcessing(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      updateRegistration(registration.id, {
+      await updateRegistration(registration.id, {
         status: 'approved',
-        reviewed_at: new Date().toLocaleString(),
         reviewed_by: user?.name
       });
-      
-      toast.success(`${registration.name}'s registration has been approved!`);
-      
     } catch (error) {
       toast.error('Failed to approve registration');
     } finally {
@@ -69,7 +47,7 @@ export const OfficerRegistrations: React.FC = () => {
     }
   };
 
-  const handleReject = async (registration: RegistrationRequest) => {
+  const handleReject = async (registration: OfficerRegistration) => {
     if (!rejectionReason.trim()) {
       toast.error('Please provide a reason for rejection');
       return;
@@ -78,12 +56,8 @@ export const OfficerRegistrations: React.FC = () => {
     setIsProcessing(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      updateRegistration(registration.id, {
+      await updateRegistration(registration.id, {
         status: 'rejected',
-        reviewed_at: new Date().toLocaleString(),
         reviewed_by: user?.name,
         rejection_reason: rejectionReason
       });
@@ -91,8 +65,6 @@ export const OfficerRegistrations: React.FC = () => {
       setShowModal(false);
       setRejectionReason('');
       setSelectedRequest(null);
-      
-      toast.success(`${registration.name}'s registration has been rejected`);
       
     } catch (error) {
       toast.error('Failed to reject registration');
@@ -260,7 +232,7 @@ export const OfficerRegistrations: React.FC = () => {
 
       {/* Registrations List */}
       <div className="space-y-4">
-        {filteredRegistrations.map((registration: RegistrationRequest) => (
+        {filteredRegistrations.map((registration: OfficerRegistration) => (
           <div key={registration.id} className={`border border-cyber-teal/20 rounded-lg p-6 ${
             isDark ? 'bg-muted-graphite' : 'bg-white'
           }`}>
@@ -313,7 +285,7 @@ export const OfficerRegistrations: React.FC = () => {
                   <div>
                     <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Submitted:</span>
                     <span className={`ml-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {registration.submitted_at}
+                      {new Date(registration.created_at).toLocaleString()}
                     </span>
                   </div>
                 </div>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Key, Plus, Edit2, Trash2, Eye, EyeOff, Activity, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { StatusBadge } from '../components/UI/StatusBadge';
-import { useData } from '../hooks/useData';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useTheme } from '../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 
 export const APIManagement: React.FC = () => {
-  const { apiKeys, isLoading, addAPIKey, updateAPIKey, deleteAPIKey } = useData();
+  const { apiKeys, isLoading, addAPIKey, updateAPIKey, deleteAPIKey } = useSupabaseData();
   const { isDark } = useTheme();
   const [showKeys, setShowKeys] = useState<{ [key: string]: boolean }>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,14 +54,14 @@ export const APIManagement: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
 
       if (editingAPI) {
-        updateAPIKey(editingAPI.id, formData);
-        toast.success('API key updated successfully!');
+        await updateAPIKey(editingAPI.id, formData);
       } else {
-        addAPIKey(formData);
-        toast.success('API key added successfully!');
+        await addAPIKey({
+          ...formData,
+          api_key: formData.key
+        });
       }
 
       setShowAddModal(false);
@@ -72,7 +72,7 @@ export const APIManagement: React.FC = () => {
         status: 'Active'
       });
     } catch (error) {
-      toast.error('Failed to save API key');
+      console.error('Error saving API key:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -81,14 +81,12 @@ export const APIManagement: React.FC = () => {
   const handleDeleteAPI = (apiKey: any) => {
     if (window.confirm(`Are you sure you want to delete ${apiKey.name}?`)) {
       deleteAPIKey(apiKey.id);
-      toast.success('API key deleted successfully!');
     }
   };
 
   const handleToggleStatus = (apiKey: any) => {
     const newStatus = apiKey.status === 'Active' ? 'Inactive' : 'Active';
     updateAPIKey(apiKey.id, { status: newStatus });
-    toast.success(`API key ${newStatus.toLowerCase()} successfully!`);
   };
 
   const filteredAPIKeys = apiKeys.filter(apiKey => 
@@ -249,7 +247,7 @@ export const APIManagement: React.FC = () => {
                       ? 'bg-crisp-black border-cyber-teal/30 text-gray-300' 
                       : 'bg-gray-50 border-gray-200 text-gray-700'
                   }`}>
-                    {showKeys[apiKey.id] ? apiKey.key : maskAPIKey(apiKey.key)}
+                    {showKeys[apiKey.id] ? apiKey.api_key : maskAPIKey(apiKey.api_key)}
                   </code>
                   <button
                     onClick={() => toggleKeyVisibility(apiKey.id)}
@@ -266,7 +264,7 @@ export const APIManagement: React.FC = () => {
                 <div>
                   <span className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Last Used:</span>
                   <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {apiKey.last_used}
+                    {apiKey.last_used ? new Date(apiKey.last_used).toLocaleString() : 'Never'}
                   </p>
                 </div>
                 <div>

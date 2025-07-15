@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Zap, Clock, CheckCircle, XCircle, AlertCircle, Pause, Play, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '../components/UI/StatusBadge';
-import { useData } from '../hooks/useData';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useTheme } from '../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 
 export const LiveRequests: React.FC = () => {
-  const { liveRequests, isLoading } = useData();
+  const { liveRequests, isLoading, loadData } = useSupabaseData();
   const { isDark } = useTheme();
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -19,6 +19,7 @@ export const LiveRequests: React.FC = () => {
 
   const handleRefresh = () => {
     setLastRefresh(new Date());
+    loadData();
     toast.success('Live requests refreshed');
   };
 
@@ -242,10 +243,10 @@ export const LiveRequests: React.FC = () => {
                         <StatusBadge status={request.status} size="sm" />
                       </div>
                       <p className={`text-sm mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {request.query}
+                        {request.query_text}
                       </p>
                       <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                        {request.timestamp}
+                        {new Date(request.created_at).toLocaleString()}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">

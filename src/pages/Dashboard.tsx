@@ -1,12 +1,12 @@
 import React from 'react';
 import { Users, Search, CreditCard, Activity, TrendingUp, Clock, Shield, Zap } from 'lucide-react';
 import { StatusBadge } from '../components/UI/StatusBadge';
-import { useData } from '../hooks/useData';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useTheme } from '../contexts/ThemeContext';
 import { format } from 'date-fns';
 
 export const Dashboard: React.FC = () => {
-  const { dashboardStats, officers, queries, liveRequests, isLoading } = useData();
+  const { dashboardStats, officers, queries, liveRequests, isLoading } = useSupabaseData();
   const { isDark } = useTheme();
 
   if (isLoading) {
@@ -229,11 +229,11 @@ export const Dashboard: React.FC = () => {
                 isDark ? 'bg-crisp-black/50' : 'bg-gray-50'
               }`}>
                 <div className="flex items-center space-x-3">
-                  <img
-                    src={officer.avatar}
-                    alt={officer.name}
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <div className="w-8 h-8 bg-cyber-gradient rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">
+                      {officer.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                   <div>
                     <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {officer.name}
@@ -279,7 +279,7 @@ export const Dashboard: React.FC = () => {
                     {request.query}
                   </p>
                   <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                    {request.timestamp}
+                    {new Date(request.created_at).toLocaleString()}
                   </p>
                 </div>
                 <StatusBadge status={request.status} size="sm" />
@@ -339,16 +339,16 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </td>
                   <td className={`py-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    {query.input}
+                    {query.input_data}
                   </td>
                   <td className={`py-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {query.source}
+                    {query.source || 'N/A'}
                   </td>
                   <td className="py-3">
                     <StatusBadge status={query.status} size="sm" />
                   </td>
                   <td className={`py-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {query.timestamp}
+                    {new Date(query.created_at).toLocaleString()}
                   </td>
                 </tr>
               ))}
