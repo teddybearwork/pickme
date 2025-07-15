@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../hooks/useData';
+import toast from 'react-hot-toast';
 
 interface RegistrationRequest {
   id: string;
@@ -26,6 +28,7 @@ interface RegistrationRequest {
 export const OfficerRegistrations: React.FC = () => {
   const { isDark } = useTheme();
   const { user } = useAuth();
+  const { registrations, updateRegistration } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<RegistrationRequest | null>(null);
@@ -33,52 +36,7 @@ export const OfficerRegistrations: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Mock data - replace with actual API call
-  const [registrations, setRegistrations] = useState<RegistrationRequest[]>([
-    {
-      id: '1',
-      name: 'Inspector Rajesh Patel',
-      email: 'rajesh.patel@police.gov.in',
-      mobile: '+91 9876543210',
-      station: 'Central Police Station',
-      department: 'Cyber Crime',
-      rank: 'Inspector',
-      badge_number: 'CC002',
-      additional_info: 'Specialized in cybercrime investigations with 8 years experience',
-      status: 'pending',
-      submitted_at: '2025-01-03 14:30'
-    },
-    {
-      id: '2',
-      name: 'ASI Priya Sharma',
-      email: 'priya.sharma@police.gov.in',
-      mobile: '+91 9123456789',
-      station: 'North District Police',
-      department: 'Intelligence',
-      rank: 'Assistant Sub Inspector',
-      badge_number: 'INT003',
-      additional_info: 'Intelligence gathering and analysis specialist',
-      status: 'pending',
-      submitted_at: '2025-01-03 11:15'
-    },
-    {
-      id: '3',
-      name: 'Constable Amit Kumar',
-      email: 'amit.kumar@police.gov.in',
-      mobile: '+91 9987654321',
-      station: 'Traffic Police Station',
-      department: 'Traffic',
-      rank: 'Constable',
-      badge_number: 'TR005',
-      additional_info: 'Traffic enforcement and vehicle verification',
-      status: 'approved',
-      submitted_at: '2025-01-02 16:45',
-      reviewed_at: '2025-01-03 09:30',
-      reviewed_by: 'Admin User'
-    }
-  ]);
-
-  const filteredRegistrations = registrations.filter(reg => {
+  const filteredRegistrations = registrations.filter((reg: RegistrationRequest) => {
     const matchesSearch = reg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reg.mobile.includes(searchTerm) ||
@@ -96,22 +54,16 @@ export const OfficerRegistrations: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      setRegistrations(prev => prev.map(reg => 
-        reg.id === registration.id 
-          ? { 
-              ...reg, 
-              status: 'approved', 
-              reviewed_at: new Date().toLocaleString(),
-              reviewed_by: user?.name 
-            }
-          : reg
-      ));
+      updateRegistration(registration.id, {
+        status: 'approved',
+        reviewed_at: new Date().toLocaleString(),
+        reviewed_by: user?.name
+      });
       
-      // Here you would also create the officer account
-      console.log('Creating officer account for:', registration);
+      toast.success(`${registration.name}'s registration has been approved!`);
       
     } catch (error) {
-      console.error('Failed to approve registration:', error);
+      toast.error('Failed to approve registration');
     } finally {
       setIsProcessing(false);
     }
@@ -119,7 +71,7 @@ export const OfficerRegistrations: React.FC = () => {
 
   const handleReject = async (registration: RegistrationRequest) => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
     
@@ -129,24 +81,21 @@ export const OfficerRegistrations: React.FC = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      setRegistrations(prev => prev.map(reg => 
-        reg.id === registration.id 
-          ? { 
-              ...reg, 
-              status: 'rejected', 
-              reviewed_at: new Date().toLocaleString(),
-              reviewed_by: user?.name,
-              rejection_reason: rejectionReason
-            }
-          : reg
-      ));
+      updateRegistration(registration.id, {
+        status: 'rejected',
+        reviewed_at: new Date().toLocaleString(),
+        reviewed_by: user?.name,
+        rejection_reason: rejectionReason
+      });
       
       setShowModal(false);
       setRejectionReason('');
       setSelectedRequest(null);
       
+      toast.success(`${registration.name}'s registration has been rejected`);
+      
     } catch (error) {
-      console.error('Failed to reject registration:', error);
+      toast.error('Failed to reject registration');
     } finally {
       setIsProcessing(false);
     }
@@ -225,7 +174,7 @@ export const OfficerRegistrations: React.FC = () => {
                 Pending Review
               </p>
               <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {registrations.filter(r => r.status === 'pending').length}
+                {registrations.filter((r: any) => r.status === 'pending').length}
               </p>
             </div>
             <Clock className="w-8 h-8 text-yellow-400" />
@@ -241,7 +190,7 @@ export const OfficerRegistrations: React.FC = () => {
                 Approved
               </p>
               <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {registrations.filter(r => r.status === 'approved').length}
+                {registrations.filter((r: any) => r.status === 'approved').length}
               </p>
             </div>
             <CheckCircle className="w-8 h-8 text-green-400" />
@@ -257,7 +206,7 @@ export const OfficerRegistrations: React.FC = () => {
                 Rejected
               </p>
               <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {registrations.filter(r => r.status === 'rejected').length}
+                {registrations.filter((r: any) => r.status === 'rejected').length}
               </p>
             </div>
             <XCircle className="w-8 h-8 text-red-400" />
@@ -311,7 +260,7 @@ export const OfficerRegistrations: React.FC = () => {
 
       {/* Registrations List */}
       <div className="space-y-4">
-        {filteredRegistrations.map((registration) => (
+        {filteredRegistrations.map((registration: RegistrationRequest) => (
           <div key={registration.id} className={`border border-cyber-teal/20 rounded-lg p-6 ${
             isDark ? 'bg-muted-graphite' : 'bg-white'
           }`}>

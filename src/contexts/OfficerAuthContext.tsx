@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import toast from 'react-hot-toast';
 
 interface OfficerUser {
   id: string;
@@ -9,6 +10,9 @@ interface OfficerUser {
   credits_remaining: number;
   total_credits: number;
   status: string;
+  department?: string;
+  rank?: string;
+  badge_number?: string;
 }
 
 interface OfficerAuthContextType {
@@ -32,65 +36,102 @@ interface OfficerAuthProviderProps {
   children: ReactNode;
 }
 
+// Mock officer database
+const mockOfficers = [
+  {
+    id: '1',
+    name: 'Inspector Ramesh Kumar',
+    mobile: '+91 9791103607',
+    email: 'ramesh@police.gov.in',
+    password: 'officer123',
+    telegram_id: '@rameshcop',
+    credits_remaining: 32,
+    total_credits: 50,
+    status: 'Active',
+    department: 'Cyber Crime',
+    rank: 'Inspector',
+    badge_number: 'CC001'
+  },
+  {
+    id: '2',
+    name: 'ASI Priya Sharma',
+    mobile: '+91 9876543210',
+    email: 'priya@police.gov.in',
+    password: 'officer123',
+    telegram_id: '@priyacop',
+    credits_remaining: 45,
+    total_credits: 50,
+    status: 'Active',
+    department: 'Intelligence',
+    rank: 'Assistant Sub Inspector',
+    badge_number: 'INT002'
+  },
+  {
+    id: '3',
+    name: 'SI Rajesh Patel',
+    mobile: '+91 9123456789',
+    email: 'rajesh@police.gov.in',
+    password: 'officer123',
+    telegram_id: '@rajeshcop',
+    credits_remaining: 12,
+    total_credits: 50,
+    status: 'Active',
+    department: 'Crime Branch',
+    rank: 'Sub Inspector',
+    badge_number: 'CB003'
+  }
+];
+
 export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ children }) => {
   const [officer, setOfficer] = useState<OfficerUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored auth token
-    const token = localStorage.getItem('officer_auth_token');
-    if (token) {
-      // Simulate user verification
-      setTimeout(() => {
-        setOfficer({
-          id: '1',
-          name: 'Inspector Ramesh Kumar',
-          mobile: '+91 9791103607',
-          email: 'ramesh@police.gov.in',
-          telegram_id: '@rameshcop',
-          credits_remaining: 32,
-          total_credits: 50,
-          status: 'Active'
-        });
-        setIsLoading(false);
-      }, 1000);
-    } else {
-      setIsLoading(false);
+    // Check for stored auth data
+    const storedOfficer = localStorage.getItem('officer_auth_user');
+    if (storedOfficer) {
+      try {
+        const officerData = JSON.parse(storedOfficer);
+        setOfficer(officerData);
+      } catch (error) {
+        localStorage.removeItem('officer_auth_user');
+      }
     }
+    setIsLoading(false);
   }, []);
 
   const login = async (identifier: string, password: string) => {
     setIsLoading(true);
     
-    // Simulate API call
+    // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Check demo credentials
-    const validCredentials = [
-      { identifier: 'ramesh@police.gov.in', password: 'officer123' },
-      { identifier: '+91 9791103607', password: 'officer123' },
-      { identifier: '9791103607', password: 'officer123' }
-    ];
-    
-    const isValid = validCredentials.some(cred => 
-      cred.identifier === identifier && cred.password === password
+    // Find officer in mock database
+    const foundOfficer = mockOfficers.find(o => 
+      (o.email === identifier || o.mobile === identifier || o.mobile.replace('+91 ', '') === identifier) && 
+      o.password === password
     );
     
-    if (isValid) {
-      const mockOfficer: OfficerUser = {
-        id: '1',
-        name: 'Inspector Ramesh Kumar',
-        mobile: '+91 9791103607',
-        email: 'ramesh@police.gov.in',
-        telegram_id: '@rameshcop',
-        credits_remaining: 32,
-        total_credits: 50,
-        status: 'Active'
+    if (foundOfficer) {
+      const officerData: OfficerUser = {
+        id: foundOfficer.id,
+        name: foundOfficer.name,
+        mobile: foundOfficer.mobile,
+        email: foundOfficer.email,
+        telegram_id: foundOfficer.telegram_id,
+        credits_remaining: foundOfficer.credits_remaining,
+        total_credits: foundOfficer.total_credits,
+        status: foundOfficer.status,
+        department: foundOfficer.department,
+        rank: foundOfficer.rank,
+        badge_number: foundOfficer.badge_number
       };
       
-      setOfficer(mockOfficer);
-      localStorage.setItem('officer_auth_token', 'mock-officer-jwt-token');
+      setOfficer(officerData);
+      localStorage.setItem('officer_auth_user', JSON.stringify(officerData));
+      toast.success(`Welcome back, ${officerData.name}!`);
     } else {
+      toast.error('Invalid credentials');
       throw new Error('Invalid credentials');
     }
     
@@ -99,7 +140,8 @@ export const OfficerAuthProvider: React.FC<OfficerAuthProviderProps> = ({ childr
 
   const logout = () => {
     setOfficer(null);
-    localStorage.removeItem('officer_auth_token');
+    localStorage.removeItem('officer_auth_user');
+    toast.success('Logged out successfully');
   };
 
   return (
