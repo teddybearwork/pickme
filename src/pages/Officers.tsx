@@ -127,6 +127,11 @@ export const Officers: React.FC = () => {
   };
 
   const handleExportCSV = () => {
+    if (officers.length === 0) {
+      toast.error('No officers to export');
+      return;
+    }
+
     const csvContent = [
       ['Name', 'Email', 'Mobile', 'Telegram ID', 'Department', 'Rank', 'Badge Number', 'Station', 'Status', 'Credits Remaining', 'Total Credits', 'Registered On'].join(','),
       ...filteredOfficers.map(officer => [
@@ -155,6 +160,7 @@ export const Officers: React.FC = () => {
     toast.success('Officers data exported successfully!');
   };
 
+  // Show loading spinner only during initial load
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -165,7 +171,7 @@ export const Officers: React.FC = () => {
 
   return (
     <div className={`p-6 space-y-6 min-h-screen ${isDark ? 'bg-crisp-black' : 'bg-soft-white'}`}>
-      {/* Header */}
+      {/* Header - ALWAYS SHOW */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -178,7 +184,12 @@ export const Officers: React.FC = () => {
         <div className="flex items-center space-x-3">
           <button 
             onClick={handleExportCSV}
-            className="bg-electric-blue/20 text-electric-blue px-4 py-2 rounded-lg hover:bg-electric-blue/30 transition-all duration-200 flex items-center space-x-2"
+            disabled={officers.length === 0}
+            className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 ${
+              officers.length === 0 
+                ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' 
+                : 'bg-electric-blue/20 text-electric-blue hover:bg-electric-blue/30'
+            }`}
           >
             <Download className="w-4 h-4" />
             <span>Export</span>
@@ -193,7 +204,7 @@ export const Officers: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - ALWAYS SHOW */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className={`border border-cyber-teal/20 rounded-lg p-6 ${
           isDark ? 'bg-muted-graphite' : 'bg-white'
@@ -260,7 +271,7 @@ export const Officers: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - ALWAYS SHOW */}
       <div className={`border border-cyber-teal/20 rounded-lg p-4 ${
         isDark ? 'bg-muted-graphite' : 'bg-white'
       }`}>
@@ -303,106 +314,132 @@ export const Officers: React.FC = () => {
         </div>
       </div>
 
-      {/* Officers Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredOfficers.map((officer) => (
-          <div key={officer.id} className={`border border-cyber-teal/20 rounded-lg p-6 hover:shadow-cyber transition-all duration-300 ${
-            isDark ? 'bg-muted-graphite' : 'bg-white'
-          }`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-cyber-gradient rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">
-                    {officer.name.charAt(0).toUpperCase()}
+      {/* Officers Grid OR Empty State */}
+      {officers.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredOfficers.map((officer) => (
+            <div key={officer.id} className={`border border-cyber-teal/20 rounded-lg p-6 hover:shadow-cyber transition-all duration-300 ${
+              isDark ? 'bg-muted-graphite' : 'bg-white'
+            }`}>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-cyber-gradient rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">
+                      {officer.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {officer.name}
+                    </h3>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {officer.mobile}
+                    </p>
+                  </div>
+                </div>
+                <StatusBadge status={officer.status} />
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Email:</span>
+                  <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.email}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Telegram:</span>
+                  <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.telegram_id || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Department:</span>
+                  <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.department || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Rank:</span>
+                  <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.rank || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Credits:</span>
+                  <span className={isDark ? 'text-white' : 'text-gray-900'}>
+                    {officer.credits_remaining}/{officer.total_credits}
                   </span>
                 </div>
-                <div>
-                  <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    {officer.name}
-                  </h3>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {officer.mobile}
-                  </p>
+              </div>
+
+              {/* Credit Progress */}
+              <div className="mb-4">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Credit Usage</span>
+                  <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
+                    {Math.round((officer.credits_remaining / officer.total_credits) * 100)}%
+                  </span>
+                </div>
+                <div className={`w-full rounded-full h-2 ${isDark ? 'bg-crisp-black' : 'bg-gray-200'}`}>
+                  <div 
+                    className="bg-cyber-gradient h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(officer.credits_remaining / officer.total_credits) * 100}%` }}
+                  />
                 </div>
               </div>
-              <StatusBadge status={officer.status} />
-            </div>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Email:</span>
-                <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.email}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Telegram:</span>
-                <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.telegram_id || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Department:</span>
-                <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.department || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Rank:</span>
-                <span className={isDark ? 'text-white' : 'text-gray-900'}>{officer.rank || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Credits:</span>
-                <span className={isDark ? 'text-white' : 'text-gray-900'}>
-                  {officer.credits_remaining}/{officer.total_credits}
-                </span>
-              </div>
-            </div>
-
-            {/* Credit Progress */}
-            <div className="mb-4">
-              <div className="flex justify-between text-xs mb-1">
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Credit Usage</span>
-                <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-                  {Math.round((officer.credits_remaining / officer.total_credits) * 100)}%
-                </span>
-              </div>
-              <div className={`w-full rounded-full h-2 ${isDark ? 'bg-crisp-black' : 'bg-gray-200'}`}>
-                <div 
-                  className="bg-cyber-gradient h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(officer.credits_remaining / officer.total_credits) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-between items-center pt-4 border-t border-cyber-teal/20">
-              <div className="flex space-x-2">
+              {/* Actions */}
+              <div className="flex justify-between items-center pt-4 border-t border-cyber-teal/20">
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleEditOfficer(officer)}
+                    className={`p-2 rounded transition-colors ${
+                      isDark ? 'text-gray-400 hover:text-cyber-teal' : 'text-gray-600 hover:text-cyber-teal'
+                    }`}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteOfficer(officer)}
+                    className={`p-2 rounded transition-colors ${
+                      isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-600 hover:text-red-400'
+                    }`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <button 
-                  onClick={() => handleEditOfficer(officer)}
-                  className={`p-2 rounded transition-colors ${
-                    isDark ? 'text-gray-400 hover:text-cyber-teal' : 'text-gray-600 hover:text-cyber-teal'
+                  onClick={() => handleToggleStatus(officer)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    officer.status === 'Active'
+                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                      : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
                   }`}
                 >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => handleDeleteOfficer(officer)}
-                  className={`p-2 rounded transition-colors ${
-                    isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-600 hover:text-red-400'
-                  }`}
-                >
-                  <Trash2 className="w-4 h-4" />
+                  {officer.status === 'Active' ? 'Suspend' : 'Activate'}
                 </button>
               </div>
-              <button 
-                onClick={() => handleToggleStatus(officer)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                  officer.status === 'Active'
-                    ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
-                    : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                }`}
-              >
-                {officer.status === 'Active' ? 'Suspend' : 'Activate'}
-              </button>
             </div>
+          ))}
+        </div>
+      ) : (
+        /* Empty State - Show when no officers */
+        <div className="text-center py-12">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+            isDark ? 'bg-muted-graphite' : 'bg-gray-100'
+          }`}>
+            <UserCheck className={`w-8 h-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
           </div>
-        ))}
-      </div>
+          <h3 className={`text-lg font-medium mb-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
+            No Officers Found
+          </h3>
+          <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            Get started by adding your first officer to the system.
+          </p>
+          <button 
+            onClick={handleAddOfficer}
+            className="bg-cyber-gradient text-white px-6 py-3 rounded-lg hover:shadow-cyber transition-all duration-200 flex items-center space-x-2 mx-auto"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add Your First Officer</span>
+          </button>
+        </div>
+      )}
 
       {/* Add/Edit Officer Modal */}
       {showAddModal && (
@@ -679,25 +716,6 @@ export const Officers: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
-      )}
-
-      {/* No Results */}
-      {filteredOfficers.length === 0 && (
-        <div className="text-center py-12">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-            isDark ? 'bg-muted-graphite' : 'bg-gray-100'
-          }`}>
-            <UserCheck className={`w-8 h-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
-          </div>
-          <h3 className={`text-lg font-medium mb-2 ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}>
-            No Officers Found
-          </h3>
-          <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
-            Try adjusting your search criteria or add a new officer.
-          </p>
         </div>
       )}
     </div>
