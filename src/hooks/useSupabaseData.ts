@@ -117,13 +117,16 @@ export const useSupabaseData = () => {
   // CRUD Operations for Officers
   const addOfficer = async (officerData: Omit<Officer, 'id' | 'created_at' | 'updated_at' | 'registered_on' | 'last_active' | 'total_queries'>) => {
     try {
+      // Extract password and remove it from the data object
+      const { password, ...officerDataWithoutPassword } = officerData as any;
+      
       // Hash the password before storing (in a real app, this should be done on the server)
-      const passwordHash = `$2b$10$${btoa(officerData.password || 'defaultpass').slice(0, 53)}`;
+      const passwordHash = `$2b$10$${btoa(password || 'defaultpass').slice(0, 53)}`;
       
       const { data, error } = await supabase
         .from('officers')
         .insert([{
-          ...officerData,
+          ...officerDataWithoutPassword,
           password_hash: passwordHash,
           total_queries: 0
         }])
@@ -143,11 +146,15 @@ export const useSupabaseData = () => {
 
   const updateOfficer = async (id: string, updates: Partial<Officer>) => {
     try {
+      // Extract password and remove it from the updates object
+      const { password, ...updatesWithoutPassword } = updates as any;
+      
+      // Prepare the update data
+      const updateData = { ...updatesWithoutPassword };
+      
       // If password is being updated, hash it
-      const updateData = { ...updates };
-      if (updates.password && updates.password.trim()) {
-        updateData.password_hash = `$2b$10$${btoa(updates.password).slice(0, 53)}`;
-        delete updateData.password; // Remove plain password from update data
+      if (password && password.trim()) {
+        updateData.password_hash = `$2b$10$${btoa(password).slice(0, 53)}`;
       }
       
       const { error } = await supabase
