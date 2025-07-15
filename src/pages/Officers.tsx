@@ -116,3 +116,13 @@ export const Officers: React.FC = () => {
 
   const handleToggleStatus = (officer: Officer) => {
     const newStatus = officer.status === 'Active' ? 'Suspended' : 'Active';
+    
+    updateOfficer(officer.id, { status: newStatus })
+      .then(() => {
+        toast.success(`Officer ${newStatus.toLowerCase()} successfully`);
+      })
+      .catch((error) => {
+        console.error('Error updating officer status:', error);
+        toast.error('Failed to update officer status');
+      });
+  };
