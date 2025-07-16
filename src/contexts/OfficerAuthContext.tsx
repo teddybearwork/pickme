@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 interface OfficerUser {
@@ -101,10 +102,10 @@ const authenticateWithSupabase = async (identifier: string, password: string) =>
 
     const officer = officers[0];
     
-    // In a real app, you would verify the password hash here
-    // For demo purposes, we'll do a simple comparison
-    const passwordMatch = officer.password_hash && 
-      (officer.password_hash.includes(btoa(password).slice(0, 20)) || password === 'officer123');
+    // Verify password hash
+    // Check if the password hash contains the base64 encoded password (our simple hashing method)
+    const expectedHash = `$2b$10$${btoa(password).slice(0, 53)}`;
+    const passwordMatch = officer.password_hash === expectedHash;
     
     if (!passwordMatch) {
       throw new Error('Invalid password');
