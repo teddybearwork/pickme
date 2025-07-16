@@ -7,19 +7,31 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-a
 // Create a mock client if no real Supabase credentials are provided
 const isDemo = !import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Mock query builder that properly chains methods
+const createMockQueryBuilder = () => {
+  const mockBuilder = {
+    select: () => mockBuilder,
+    insert: () => mockBuilder,
+    update: () => mockBuilder,
+    delete: () => mockBuilder,
+    eq: () => mockBuilder,
+    or: () => mockBuilder,
+    order: () => mockBuilder,
+    limit: () => mockBuilder,
+    single: () => ({ data: null, error: null }),
+    then: (resolve: any) => resolve({ data: [], error: null })
+  };
+  
+  // Make it thenable so it works with async/await
+  mockBuilder.then = (resolve: any) => resolve({ data: [], error: null });
+  
+  return mockBuilder;
+};
+
 export const supabase = isDemo ? 
   // Mock Supabase client for demo mode
   {
-    from: () => ({
-      select: () => ({ data: [], error: null }),
-      insert: () => ({ data: null, error: null }),
-      update: () => ({ data: null, error: null }),
-      delete: () => ({ data: null, error: null }),
-      eq: () => ({ data: [], error: null }),
-      order: () => ({ data: [], error: null }),
-      limit: () => ({ data: [], error: null }),
-      single: () => ({ data: null, error: null })
-    }),
+    from: () => createMockQueryBuilder(),
     auth: {
       signUp: () => Promise.resolve({ data: null, error: null }),
       signIn: () => Promise.resolve({ data: null, error: null }),
@@ -117,4 +129,40 @@ export interface LiveRequest {
   response_time_ms?: number;
   created_at: string;
   completed_at?: string;
+}
+
+// Rate Plan interfaces for the new feature
+export interface RatePlan {
+  id: string;
+  name: string;
+  user_type: 'Police' | 'Private' | 'Custom';
+  monthly_fee: number;
+  default_credits: number;
+  renewal_required: boolean;
+  topup_allowed: boolean;
+  status: 'Active' | 'Inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface APIConfig {
+  id: string;
+  api_name: string;
+  global_buy_price: number;
+  global_sell_price: number;
+  default_credit_charge: number;
+  type: 'FREE' | 'PRO' | 'DISABLED';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanAPIAccess {
+  id: string;
+  plan_id: string;
+  api_config_id: string;
+  enabled: boolean;
+  credit_cost: number;
+  buy_price: number;
+  sell_price: number;
+  created_at: string;
 }
